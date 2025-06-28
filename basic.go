@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bufio"
+	"flag"
 	"fmt"
 	"image"
 	"image/color"
@@ -9,7 +11,6 @@ import (
 	"log"
 	"math/rand"
 	"os"
-
 	"strings"
 
 	"golang.org/x/image/font"
@@ -150,6 +151,62 @@ var firstGradeVocab = []string{
 	"yank",
 }
 
+// Command line flag for custom vocabulary file
+var vocabFile = flag.String("vocab", "", "Path to custom vocabulary file (one word per line)")
+
+// loadCustomVocab reads a vocabulary file and returns a slice of words
+func loadCustomVocab(filename string) ([]string, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open vocabulary file: %v", err)
+	}
+	defer file.Close()
+
+	var words []string
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		word := strings.TrimSpace(scanner.Text())
+		if word != "" { // Skip empty lines
+			words = append(words, word)
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("error reading vocabulary file: %v", err)
+	}
+
+	if len(words) < 10 {
+		return nil, fmt.Errorf("vocabulary file must contain at least 10 words, found %d", len(words))
+	}
+
+	return words, nil
+}
+
+// filterWordsByLength removes words that are too long to fit in the grid
+func filterWordsByLength(words []string, maxLength int) []string {
+	var filteredWords []string
+	var removedWords []string
+
+	for _, word := range words {
+		if len(word) <= maxLength {
+			filteredWords = append(filteredWords, word)
+		} else {
+			removedWords = append(removedWords, word)
+		}
+	}
+
+	// Print information about filtered words
+	if len(removedWords) > 0 {
+		fmt.Printf("Removed %d words that are too long for %dx%d grid:\n", len(removedWords), maxLength, maxLength)
+		for _, word := range removedWords {
+			fmt.Printf("  - %s (%d characters)\n", word, len(word))
+		}
+	}
+
+	return filteredWords
+}
+
 // calculateHeaderHeight calculates the required header space based on number of words
 func calculateHeaderHeight(wordCount int) int {
 	wordRows := (wordCount + wordsPerRow - 1) / wordsPerRow // Ceiling division
@@ -157,16 +214,42 @@ func calculateHeaderHeight(wordCount int) int {
 }
 
 func main() {
+	// Parse command line flags
+	flag.Parse()
+
 	fmt.Println("Generating word search puzzle...")
 
 	// Seed random number generator
 	rand.Seed(int64(os.Getpid())) // Use process ID for randomness
 
-	// Words to place in the puzzle
-	// For simplicity, we use a predefined list of first grade vocabulary words
-	words := make([]string, 10)
-	temp := make([]string, len(firstGradeVocab))
-	copy(temp, firstGradeVocab)
+	// Determine which vocabulary to use
+	var vocabulary []string
+	if *vocabFile != "" {
+		fmt.Printf("Loading custom vocabulary from: %s\n", *vocabFile)
+		customVocab, err := loadCustomVocab(*vocabFile)
+		if err != nil {
+			log.Fatalf("Error loading custom vocabulary: %v", err)
+		}
+		vocabulary = customVocab
+		fmt.Printf("Loaded %d words from custom vocabulary file\n", len(vocabulary))
+	} else {
+		vocabulary = firstGradeVocab
+		fmt.Printf("Using default first-grade vocabulary (%d words)\n", len(vocabulary))
+	}
+
+	// Filter out words that are too long for the grid
+	vocabulary = filterWordsByLength(vocabulary, gridSize)
+	fmt.Printf("After filtering: %d words available for puzzle generation\n", len(vocabulary))
+
+	// Check if we have enough words after filtering
+	if len(vocabulary) < 10 {
+		log.Fatalf("Not enough words available after filtering. Need at least 10 words, but only %d words fit in a %dx%d grid", len(vocabulary), gridSize, gridSize)
+	}
+
+	// Words to place in the puzzle - select 10 random words from chosen vocabulary
+	words := make([]string, 0, 10)
+	temp := make([]string, len(vocabulary))
+	copy(temp, vocabulary)
 
 	for i := 0; i < 10 && len(temp) > 0; i++ {
 		randomIndex := rand.Intn(len(temp))

@@ -31,13 +31,47 @@ A Go-based command-line tool that generates customizable word search puzzles as 
 
 ### Basic Usage
 
-Generate a new word search puzzle:
+Generate a new word search puzzle with the default first-grade vocabulary:
 
 ```bash
 go run .
 ```
 
 This will create a new `output.png` file in the current directory containing your word search puzzle.
+
+### Custom Vocabulary
+
+Generate a word search puzzle using your own custom vocabulary file:
+
+```bash
+go run . -vocab my_words.txt
+```
+
+The custom vocabulary file should contain one word per line. For example:
+
+```
+apple
+banana
+cherry
+dog
+elephant
+fish
+guitar
+house
+ice
+jungle
+```
+
+**Requirements for custom vocabulary files:**
+- Must contain at least 10 words (since the puzzle selects 10 random words)
+- One word per line
+- Empty lines are ignored
+- Words can be any length, but very long words may be harder to place in the grid
+
+### Command Line Options
+
+- `-vocab <filename>`: Path to custom vocabulary file (one word per line)
+- `-help`: Display usage information
 
 ### Output
 
