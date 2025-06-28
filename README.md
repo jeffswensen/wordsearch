@@ -127,7 +127,21 @@ The default vocabulary consists of 90+ first-grade level words including:
 
 ### Modifying the Vocabulary
 
-To use your own word list, edit the `firstGradeVocab` slice in `basic.go`:
+There are two ways to use your own custom word list:
+
+#### Option 1: Command Line Argument (Recommended)
+
+Use the `-vocab` flag to specify a custom vocabulary file without modifying the code:
+
+```bash
+go run . -vocab my_words.txt
+```
+
+This approach is recommended because it's flexible and doesn't require code changes. See the [Custom Vocabulary](#custom-vocabulary) section above for detailed usage instructions.
+
+#### Option 2: Direct Code Modification
+
+For permanent changes to the default vocabulary, edit the `firstGradeVocab` slice in `basic.go`:
 
 ```go
 var firstGradeVocab = []string{
@@ -137,6 +151,8 @@ var firstGradeVocab = []string{
     "here",
 }
 ```
+
+This approach is useful when you want to change the default vocabulary permanently or when distributing a customized version of the application.
 
 ### Adjusting Grid Size
 
